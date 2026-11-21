@@ -1,38 +1,40 @@
 # ✨ Prompt Genie
 
-A simple web page that turns a few choices into a detailed AI art prompt for invitations, postcards, coloring pages and more.
+A step-by-step helper that plans a matching clipart kit (or one finished design) and writes every
+ChatGPT prompt needed to make it. No logins, no API keys, no cost: the images are made in your own ChatGPT account.
 
-**How it works for the user:**
-1. Pick a layout (Invitation, Postcard, Coloring Book Page, …)
-2. Pick an art style (Watercolor, Painted, Hand-Drawn, Playful, Vintage, Textile)
-3. Type a theme (plus optional colors and extra details)
-4. Choose **Full Design** (one finished piece) or **Elements** (a sheet of separate graphics)
-5. Choose a platform, click **Make my prompt**, then **Open ChatGPT** or **Copy**
+## The steps
 
-## Uses her own ChatGPT account
+1. **Theme:** what it's about, and what it's for (optional)
+2. **Layout:** format (Invitation, Postcard, Coloring Book, …) and arrangement (frame & corners, arch topper, wreath, …)
+3. **Look:** art style, finish, up to 3 moods, and a color palette
+4. **Plan:** kit size (Finished design, Starter, Bundle, Mega), page size, which sheets to include, and must-haves
+5. **Build:** a numbered list of prompts
+   - **Start in ChatGPT** opens a new chat with prompt 1 filled in (and copies it as a backup)
+   - Each next prompt is copied and pasted into the **same chat**, so everything matches
+   - **Make full-size pieces:** tap any piece from a sheet to get a prompt that turns it into its own full-size image
 
-The Genie writes the prompt itself with plain templates, so it needs no AI, no API key and costs nothing.
-The **Open ChatGPT** button opens `chatgpt.com/?q=…` with the prompt already filled in, so the image is made
-in her own logged-in ChatGPT account and counts against her plan's limits. Clicking the button also copies
-the prompt, in case the ChatGPT phone app opens without filling it in.
+The **My kit** sidebar shows a summary and can save the ChatGPT chat link, so you can get back to the kit's chat.
+Everything is saved in the browser automatically.
 
-(A ChatGPT Plus subscription doesn't include API access. Calling OpenAI directly from the page would need a separately billed API key, so this setup avoids that.)
+## Why it doesn't call ChatGPT directly
+
+A ChatGPT Plus subscription doesn't include API access (that's billed separately and needs a developer key).
+So the Genie writes the prompts itself, and the button opens `chatgpt.com/?q=…` with the prompt already filled in.
+The images are made in your own logged-in account.
 
 ## Fine-tuning
 
-Everything she sees comes from **`config.js`**. Edit that file to:
-- reword an art style's description (the `prompt` field is what goes into the prompt)
-- add or remove layouts and styles, or change their emoji
-- change sizes and aspect ratios
-- add platforms
+Everything you choose from is in **`config.js`**, with plain-English notes:
+- `styles`: art style wording (the `prompt` text goes straight into every prompt)
+- `formats`, `compositions`, `finishes`, `moods`, `palettes`, `pageSizes`
+- `kits`: what's in Starter, Bundle and Mega (sheets, piece counts, papers, frames, scenes)
 
-The logic that builds the prompt is `buildPrompt()` in `index.html`.
+The prompt wording itself is in `app.js` (`sheetPrompt`, `singlePrompt`, `finishedPrompt`, `piecePrompt`).
 
 ## Putting it online (one-time setup)
 
-1. On GitHub, go to the repo's **Settings → Pages**
-2. Under *Source*, pick **Deploy from a branch**, then pick the branch and the `/ (root)` folder, and click **Save**
-3. After a minute you get a link like `https://<username>.github.io/MomsPromptGenie/`. Send it to her and have her
-   bookmark it, or use "Add to Home Screen" on her phone.
+1. On GitHub: **Settings → Pages**, then choose *Deploy from a branch*, pick the branch and `/ (root)`, and click **Save**
+2. You'll get a link like `https://<username>.github.io/MomsPromptGenie/`. Bookmark it, or use "Add to Home Screen" on a phone.
 
-To try it locally, just double-click `index.html`.
+To try it locally, just open `index.html` in a browser.
