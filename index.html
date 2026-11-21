@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt Genie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700&display=swap">
+<style>
+  :root {
+    --bg: #fbf6f1;
+    --card: #ffffff;
+    --ink: #3a2f3b;
+    --muted: #7a6d78;
+    --line: #eadfd8;
+    --accent: #c4577a;
+    --accent-soft: #fbe7ee;
+    --accent-ink: #ffffff;
+    --good: #3f8f6b;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 17px/1.5 "Nunito", system-ui, sans-serif;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  header { text-align: center; margin-bottom: 24px; }
+  h1 { font-family: "Fraunces", Georgia, serif; font-size: clamp(2rem, 6vw, 2.8rem); margin: 0 0 4px; }
+  header p { color: var(--muted); margin: 0; }
+  .step {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px; margin-bottom: 16px;
+  }
+  .step h2 { font-family: "Fraunces", Georgia, serif; font-size: 1.3rem; margin: 0 0 4px; display: flex; gap: 10px; align-items: center; }
+  .num {
+    flex: none; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+    display: inline-grid; place-items: center; font: 700 15px "Nunito", sans-serif;
+  }
+  .hint { color: var(--muted); margin: 0 0 14px; font-size: 15px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .choice {
+    border: 2px solid var(--line); background: var(--card); border-radius: 12px; padding: 14px 10px;
+    font: 600 16px "Nunito", sans-serif; color: var(--ink); cursor: pointer; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; transition: border-color .15s, background .15s;
+  }
+  .choice .em { font-size: 28px; line-height: 1; }
+  .choice:hover { border-color: var(--accent); }
+  .choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  label.field { display: block; font-weight: 700; margin: 14px 0 6px; }
+  label.field small { font-weight: 400; color: var(--muted); }
+  input[type=text], textarea, select {
+    width: 100%; padding: 12px 14px; border: 2px solid var(--line); border-radius: 12px;
+    font: 17px "Nunito", sans-serif; color: var(--ink); background: var(--card);
+  }
+  input[type=text]:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+  .radio-group { display: flex; flex-direction: column; gap: 8px; }
+  .radio-group label { display: flex; gap: 10px; align-items: flex-start; font-weight: 600; cursor: pointer; }
+  .radio-group input { margin-top: 5px; accent-color: var(--accent); width: 18px; height: 18px; }
+  .radio-group span small { display: block; font-weight: 400; color: var(--muted); }
+  .hidden { display: none !important; }
+  .btn {
+    border: 0; border-radius: 999px; padding: 14px 26px; font: 700 18px "Nunito", sans-serif;
+    cursor: pointer; background: var(--accent); color: var(--accent-ink); text-decoration: none;
+    display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+  }
+  .btn.secondary { background: var(--accent-soft); color: var(--accent); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .make { width: 100%; font-size: 20px; padding: 18px; margin-top: 4px; }
+  .error { color: var(--accent); font-weight: 700; margin: 10px 0 0; text-align: center; }
+  #result textarea { min-height: 260px; font-size: 15px; line-height: 1.55; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .toast { color: var(--good); font-weight: 700; align-self: center; }
+  .tips { background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; margin-top: 16px; font-size: 15px; }
+  .tips ul { margin: 6px 0 0; padding-left: 20px; }
+  footer { text-align: center; color: var(--muted); font-size: 14px; margin-top: 24px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>✨ Prompt Genie ✨</h1>
+    <p>Pick a few things and I'll write the perfect art prompt for you.</p>
+  </header>
+
+  <section class="step">
+    <h2><span class="num">1</span> What are we making?</h2>
+    <p class="hint">Choose a layout.</p>
+    <div class="grid" id="layouts"></div>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">2</span> Pick an art style</h2>
+    <p class="hint">How should it look?</p>
+    <div class="grid" id="styles"></div>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">3</span> What's the theme?</h2>
+    <p class="hint">Describe it in a few words, like "baby shower with lemons and bees" or "Christmas cardinals in the snow".</p>
+    <input type="text" id="theme" placeholder="Type your theme here…">
+    <div id="paletteWrap">
+      <label class="field" for="palette">Colors <small>(optional)</small></label>
+      <input type="text" id="palette" placeholder="e.g. blush pink, sage green and gold">
+    </div>
+    <label class="field" for="extra">Anything else? <small>(optional)</small></label>
+    <input type="text" id="extra" placeholder="e.g. include a little fox, keep it simple, lots of flowers">
+  </section>
+
+  <section class="step">
+    <h2><span class="num">4</span> Elements or Full Design?</h2>
+    <p class="hint">Elements = a sheet of separate graphics you can mix and match. Full Design = one finished piece.</p>
+    <select id="designType"></select>
+
+    <div id="countWrap" class="hidden">
+      <label class="field" for="count">How many graphics on the sheet?</label>
+      <select id="count"></select>
+    </div>
+
+    <div id="textWrap" class="hidden">
+      <label class="field">Words on the design</label>
+      <div class="radio-group">
+        <label><input type="radio" name="textMode" value="blank" checked>
+          <span>Leave a blank space for words <small>Best choice — add your text later in Canva so it's spelled perfectly.</small></span></label>
+        <label><input type="radio" name="textMode" value="include">
+          <span>Put my words on it <small>AI sometimes misspells words, so double-check the result.</small></span></label>
+        <label><input type="radio" name="textMode" value="none">
+          <span>No words at all</span></label>
+      </div>
+      <div id="wordingWrap" class="hidden">
+        <label class="field" for="wording">Your wording</label>
+        <textarea id="wording" placeholder="You're invited!&#10;Emma's 5th Birthday&#10;Saturday, June 8 at 2 PM"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section class="step">
+    <h2><span class="num">5</span> Where will you make the art?</h2>
+    <select id="platform"></select>
+  </section>
+
+  <button class="btn make" id="make">✨ Make my prompt</button>
+  <p class="error hidden" id="error"></p>
+
+  <section class="step hidden" id="result" style="margin-top:16px">
+    <h2>🪄 Your prompt is ready!</h2>
+    <p class="hint">You can edit it below before using it.</p>
+    <textarea id="output"></textarea>
+    <div class="actions">
+      <a class="btn" id="openBtn" target="_blank" rel="noopener">Open in ChatGPT ↗</a>
+      <button class="btn secondary" id="copyBtn">📋 Copy prompt</button>
+      <span class="toast hidden" id="toast">Copied!</span>
+    </div>
+    <div class="tips">
+      <strong>Tips</strong>
+      <ul id="tipsList"></ul>
+    </div>
+  </section>
+
+  <footer>Made with love 💕</footer>
+</div>
+
+<script src="config.js"></script>
+<script>
+(() => {
+  const C = window.GENIE_CONFIG;
+  const $ = (id) => document.getElementById(id);
+  const state = { layout: null, style: null };
+
+  // ---------- Build the page from config ----------
+  function buildChoices(containerId, items, key) {
+    const box = $(containerId);
+    items.forEach((item) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "choice";
+      b.setAttribute("aria-pressed", "false");
+      b.innerHTML = `<span class="em">${item.emoji || ""}</span><span>${item.label}</span>`;
+      b.addEventListener("click", () => {
+        state[key] = item;
+        box.querySelectorAll(".choice").forEach((x) => x.setAttribute("aria-pressed", "false"));
+        b.setAttribute("aria-pressed", "true");
+        refreshVisibility();
+      });
+      box.appendChild(b);
+    });
+  }
+  function fillSelect(id, items, labelFn, valueFn) {
+    const sel = $(id);
+    items.forEach((it) => {
+      const o = document.createElement("option");
+      o.value = valueFn(it); o.textContent = labelFn(it);
+      sel.appendChild(o);
+    });
+  }
+
+  buildChoices("layouts", C.layouts, "layout");
+  buildChoices("styles", C.styles, "style");
+  fillSelect("designType", C.designTypes, (d) => d.label, (d) => d.id);
+  fillSelect("count", C.elementCounts, (n) => n + " graphics", (n) => n);
+  $("count").value = C.elementCounts[1] || C.elementCounts[0];
+  fillSelect("platform", C.platforms, (p) => p.label, (p) => p.id);
+
+  // Remember the last platform she used
+  try { const p = localStorage.getItem("genie-platform"); if (p) $("platform").value = p; } catch (e) {}
+  $("platform").addEventListener("change", () => {
+    try { localStorage.setItem("genie-platform", $("platform").value); } catch (e) {}
+  });
+
+  function textMode() { return document.querySelector('input[name="textMode"]:checked').value; }
+
+  function refreshVisibility() {
+    const isElements = $("designType").value === "elements";
+    const L = state.layout;
+    $("countWrap").classList.toggle("hidden", !isElements);
+    $("textWrap").classList.toggle("hidden", isElements || !L || !L.hasText);
+    $("wordingWrap").classList.toggle("hidden", textMode() !== "include");
+    $("paletteWrap").classList.toggle("hidden", !!(L && L.lineArt));
+  }
+  $("designType").addEventListener("change", refreshVisibility);
+  document.querySelectorAll('input[name="textMode"]').forEach((r) => r.addEventListener("change", refreshVisibility));
+  refreshVisibility();
+
+  // ---------- Prompt builder ----------
+  function buildPrompt() {
+    const L = state.layout, S = state.style;
+    const theme = $("theme").value.trim();
+    const palette = $("palette").value.trim();
+    const extra = $("extra").value.trim();
+    const wording = $("wording").value.trim();
+    const isElements = $("designType").value === "elements";
+    const count = $("count").value;
+    const P = C.platforms.find((p) => p.id === $("platform").value);
+    const lineArt = !!L.lineArt;
+    const tm = (!isElements && L.hasText) ? textMode() : "none";
+
+    // Each section is [full sentence, compact phrase]
+    const parts = [];
+    const add = (sentence, phrase) => parts.push([sentence, phrase === undefined ? sentence : phrase]);
+
+    if (isElements) {
+      add(`Create an elements sheet of ${count} separate, individual graphics on the theme of "${theme}". The graphics should be ${L.elements}, intended for use in ${L.shape.replace(/^an? /, "a ")}.`,
+          `elements sheet of ${count} separate ${theme} themed graphics, ${L.elements}`);
+      add(`Arrange the graphics in a neat, evenly spaced grid on a plain solid white background. Each graphic must be complete and fully separated from the others with generous space around it, so it can be easily cut out or isolated. No overlapping, nothing cropped at the edges, no background scenery, no frames around the sheet.`,
+          `neatly arranged evenly spaced grid, plain solid white background, each graphic isolated with generous spacing, no overlapping, nothing cropped`);
+      add(`Include a variety of pieces: a few larger hero illustrations plus smaller accent pieces. All graphics must share the same style, line quality, and color palette so they work together as one cohesive collection.`,
+          `mix of large hero pieces and small accents, cohesive matching set`);
+    } else {
+      add(`Create ${L.shape} with a "${theme}" theme. The design should be ${L.full}.`,
+          `${L.shape}, ${theme} theme, ${L.full}`);
+      add(`Use a balanced, professional composition with a clear focal point. Keep all important details at least a quarter inch away from the edges so nothing is cut off when printed.`,
+          `balanced professional composition, clear focal point, safe margins`);
+    }
+
+    if (lineArt) {
+      add(`Art style: black-and-white coloring book line art only, with ${S.lineArt}. Use clean, bold, fully closed outlines on a pure white background. No shading, no gray tones, no color fills, no gradients. Make the spaces large enough to color comfortably.`,
+          `black and white coloring book line art, ${S.lineArt}, clean bold closed outlines, pure white background, no shading, no gray, no color`);
+    } else {
+      add(`Art style: ${S.prompt}.`, S.prompt);
+      add(palette ? `Color palette: ${palette}.` : `Color palette: a harmonious palette that suits the theme.`,
+          palette ? `color palette of ${palette}` : `harmonious color palette`);
+    }
+
+    if (extra) add(`Additional details: ${extra}.`, extra);
+
+    if (tm === "include" && wording) {
+      add(`Include the following text exactly as written, spelled correctly, in elegant, highly legible lettering that matches the style:\n"${wording}"`,
+          `with the text "${wording.replace(/\n/g, " / ")}"`);
+    } else if (tm === "blank" || (tm === "include" && !wording)) {
+      add(`Do not include any text, letters, or numbers. Leave a clean, open, uncluttered area in the design where wording can be added later.`,
+          `clean empty space reserved for text, no lettering`);
+    } else {
+      add(`Do not include any text, letters, words, or numbers anywhere in the image.`, null);
+    }
+
+    const ratio = isElements ? "1:1" : L.ratio;
+    add(`Quality: high resolution, crisp clean details, professional print quality. No watermarks, no signatures, no logos.`,
+        `high resolution, crisp details, print quality`);
+
+    if (P.style === "compact") {
+      const phrases = parts.map((p) => p[1]).filter(Boolean).join(", ");
+      const no = ["watermark", "signature", "logo"];
+      if (tm !== "include") no.unshift("text", "letters");
+      if (lineArt) no.push("color", "shading");
+      return `${phrases} --ar ${ratio} --no ${no.join(", ")}`;
+    }
+
+    const body = parts.map((p) => p[0]).join("\n\n");
+    const sizeLine = `\n\nAspect ratio: ${ratio}${isElements ? " (square sheet)" : ""}.`;
+    return (P.intro ? P.intro + "\n\n" : "") + body + sizeLine;
+  }
+
+  // ---------- Make / copy / open ----------
+  function showError(msg) { const e = $("error"); e.textContent = msg; e.classList.remove("hidden"); }
+
+  $("make").addEventListener("click", () => {
+    $("error").classList.add("hidden");
+    if (!state.layout) return showError("Step 1: please pick a layout.");
+    if (!state.style) return showError("Step 2: please pick an art style.");
+    if (!$("theme").value.trim()) { $("theme").focus(); return showError("Step 3: please type a theme."); }
+
+    $("output").value = buildPrompt();
+    updateButtons();
+    $("result").classList.remove("hidden");
+    $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  function updateButtons() {
+    const P = C.platforms.find((p) => p.id === $("platform").value);
+    const open = $("openBtn");
+    if (P.openUrl) {
+      open.classList.remove("hidden");
+      open.textContent = `Open ${P.label} ↗`;
+      open.href = P.openUrl.replace("{prompt}", encodeURIComponent($("output").value));
+    } else {
+      open.classList.add("hidden");
+    }
+    const tips = [];
+    if (P.id === "chatgpt") {
+      tips.push("“Open ChatGPT” starts a new chat with your prompt already filled in, using your own ChatGPT account.");
+      tips.push("If the box comes up empty (this can happen in the phone app), just tap and hold to paste — the prompt is already copied.");
+      tips.push("Don't love it? Reply with a tweak, like “make it softer” or “add more flowers”.");
+    } else if (P.openUrl) {
+      tips.push(`Click Copy, then “Open ${P.label}” and paste the prompt into the box.`);
+    } else {
+      tips.push(`Click Copy, then open ${P.label} and paste the prompt into the box.`);
+    }
+    if ($("designType").value === "elements") tips.push("Tip: for cut-out graphics, ask for a transparent background, or use Canva's Background Remover.");
+    $("tipsList").innerHTML = tips.map((t) => `<li>${t}</li>`).join("");
+  }
+  $("output").addEventListener("input", updateButtons);
+  $("platform").addEventListener("change", () => { if (!$("result").classList.contains("hidden")) $("make").click(); });
+
+  async function copyPrompt() {
+    const text = $("output").value;
+    try { await navigator.clipboard.writeText(text); }
+    catch (e) { $("output").select(); document.execCommand("copy"); }
+    const t = $("toast"); t.classList.remove("hidden");
+    setTimeout(() => t.classList.add("hidden"), 2000);
+  }
+  $("copyBtn").addEventListener("click", copyPrompt);
+  // Opening also copies, as a backup in case the site doesn't pre-fill.
+  $("openBtn").addEventListener("click", () => { copyPrompt(); });
+})();
+</script>
+</body>
+</html>
