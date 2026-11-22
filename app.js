@@ -462,7 +462,12 @@
       case "back": return go(S.step - 1);
       case "goto": return go(+el.dataset.n);
       case "reset":
-        if (!confirm("Start a new kit? This clears your current choices.")) return;
+        if (!el.dataset.armed) {
+          el.dataset.armed = "1";
+          el.textContent = "Tap again to clear everything";
+          setTimeout(() => { if (el.isConnected) { delete el.dataset.armed; el.textContent = "Start a new kit"; } }, 4000);
+          return;
+        }
         S = JSON.parse(JSON.stringify(DEFAULTS));
         return render();
       case "idea": S.theme = id; break;

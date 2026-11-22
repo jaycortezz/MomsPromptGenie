@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
 <title>Prompt Genie</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700;800&display=swap">
@@ -21,6 +22,30 @@
     --honey-soft: #fdf5e2;
     --good: #3f8f6b;
     --radius: 18px;
+    --soft-bg: #fcfaf8;
+    --done-bg: #f6fbf8;
+    --done-line: #cfe7da;
+    --done-badge: #dcefe4;
+    --honey-ink: #7a5610;
+    --honey-line: #f3e2b8;
+    --toast-ink: #ffffff;
+    --sw-line: rgba(0,0,0,.08);
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #1d1820; --card: #26202a; --ink: #f1e9ee; --muted: #b3a6b0; --line: #3d3340;
+    --accent: #e07d9c; --accent-dark: #f0a3bb; --accent-soft: #432a36; --accent-ink: #1d1820;
+    --honey: #e9b949; --honey-soft: #3a3020; --good: #7cc8a3;
+    --soft-bg: #221c25; --done-bg: #1f2a25; --done-line: #33493e; --done-badge: #2c4237;
+    --honey-ink: #ecd29a; --honey-line: #574828; --toast-ink: #1d1820; --sw-line: rgba(255,255,255,.15);
+    color-scheme: dark;
+  } }
+  :root[data-theme="dark"] {
+    --bg: #1d1820; --card: #26202a; --ink: #f1e9ee; --muted: #b3a6b0; --line: #3d3340;
+    --accent: #e07d9c; --accent-dark: #f0a3bb; --accent-soft: #432a36; --accent-ink: #1d1820;
+    --honey: #e9b949; --honey-soft: #3a3020; --good: #7cc8a3;
+    --soft-bg: #221c25; --done-bg: #1f2a25; --done-line: #33493e; --done-badge: #2c4237;
+    --honey-ink: #ecd29a; --honey-line: #574828; --toast-ink: #1d1820; --sw-line: rgba(255,255,255,.15);
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--bg); color: var(--ink); }
@@ -28,7 +53,7 @@
   h1, h2, .brand { font-family: "Fraunces", Georgia, serif; }
   button { font: inherit; color: inherit; }
 
-  .top { max-width: 1180px; margin: 0 auto; padding: 18px 16px 6px; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+  .top { max-width: 1180px; margin: 0 auto; padding-block: 18px 6px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
   .brand { font-size: 1.5rem; font-weight: 700; margin: 0; }
   #stepper { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
   #stepper button {
@@ -41,7 +66,7 @@
   #stepper .current { background: var(--accent-soft); color: var(--accent-dark); }
   #stepper .current .dot { background: var(--accent); color: var(--accent-ink); }
 
-  .layout { max-width: 1180px; margin: 0 auto; padding: 12px 16px 48px; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+  .layout { max-width: 1180px; margin: 0 auto; padding-block: 12px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
   @media (max-width: 880px) { .layout { grid-template-columns: minmax(0, 1fr); } }
 
   .panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
@@ -71,7 +96,7 @@
   }
   .kit .kit-head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding-right: 22px; }
   .kit .counts { font-size: 13px; color: var(--accent-dark); font-weight: 800; }
-  .tag { font-size: 11px; font-weight: 800; background: var(--honey-soft); color: #8a6312; border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+  .tag { font-size: 11px; font-weight: 800; background: var(--honey-soft); color: var(--honey-ink); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip {
@@ -85,7 +110,7 @@
   .ideas > span { color: var(--muted); font-size: 14px; margin-right: 2px; }
 
   .swatches { display: flex; gap: 4px; margin-top: 4px; }
-  .sw { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(0,0,0,.08); display: inline-grid; place-items: center; font-size: 11px; }
+  .sw { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--sw-line); display: inline-grid; place-items: center; font-size: 11px; }
   .sw.genie { background: var(--honey-soft); }
   .swatches.big .sw { width: 26px; height: 26px; }
 
@@ -106,7 +131,7 @@
   .items, .pcards, .pieces { display: flex; flex-direction: column; gap: 10px; }
   .item, .pcard header { display: flex; gap: 14px; align-items: flex-start; }
   .item { border: 1px solid var(--line); border-radius: 14px; padding: 14px; cursor: pointer; }
-  .item.off { background: #fcfaf8; }
+  .item.off { background: var(--soft-bg); }
   .item.off .item-body { opacity: .6; }
   .badge {
     flex: none; width: 40px; height: 40px; border-radius: 10px; background: var(--accent-soft); color: var(--accent-dark);
@@ -121,13 +146,13 @@
   .howto { background: var(--honey-soft); border-radius: 14px; padding: 14px 16px 14px 36px; margin: 12px 0 18px; }
   .howto li + li { margin-top: 6px; }
   .pcard { border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
-  .pcard.is-done { background: #f6fbf8; border-color: #cfe7da; }
-  .pcard.is-done .badge { background: #dcefe4; color: var(--good); }
+  .pcard.is-done { background: var(--done-bg); border-color: var(--done-line); }
+  .pcard.is-done .badge { background: var(--done-badge); color: var(--good); }
   .pcard.small header { align-items: center; }
   .pcard details { margin-top: 10px; }
   .pcard summary { cursor: pointer; font-weight: 700; color: var(--accent-dark); font-size: 14px; }
   .pcard pre {
-    white-space: pre-wrap; word-wrap: break-word; font: 14px/1.55 "Nunito", sans-serif; background: #fcfaf8; border: 1px solid var(--line);
+    white-space: pre-wrap; word-wrap: break-word; font: 14px/1.55 "Nunito", sans-serif; background: var(--soft-bg); border: 1px solid var(--line);
     border-radius: 10px; padding: 12px; margin: 8px 0 0; max-height: 320px; overflow: auto;
   }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
@@ -140,6 +165,8 @@
     background: var(--accent); color: var(--accent-ink); display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   }
   .btn:hover { background: var(--accent-dark); }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
   .btn.secondary { background: var(--accent-soft); color: var(--accent-dark); }
   .btn.ghost { background: var(--card); color: var(--accent-dark); border: 2px solid var(--accent-soft); width: 100%; }
   .btn.ghost:hover { border-color: var(--accent); background: var(--card); }
@@ -162,11 +189,11 @@
   .save summary { cursor: pointer; font-weight: 800; color: var(--accent-dark); font-size: 14px; }
   .save p { font-size: 13px; color: var(--muted); margin: 6px 0; }
   .save input { font-size: 14px; padding: 9px 12px; }
-  .ai-note { background: var(--honey-soft); border: 1px solid #f3e2b8; font-size: 13px; color: #6b5a3a; display: flex; gap: 8px; }
+  .ai-note { background: var(--honey-soft); border: 1px solid var(--honey-line); font-size: 13px; color: var(--honey-ink); display: flex; gap: 8px; }
   .ai-note::before { content: "✦"; color: var(--honey); }
 
   #toast {
-    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--ink); color: #fff; padding: 10px 18px;
+    position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--ink); color: var(--toast-ink); padding: 10px 18px;
     border-radius: 999px; font-weight: 700; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: calc(100% - 32px); text-align: center;
   }
   #toast.show { opacity: 1; transform: translate(-50%, 0); }
