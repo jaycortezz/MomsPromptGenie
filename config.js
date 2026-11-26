@@ -11,12 +11,14 @@ window.GENIE_CONFIG = {
      size:        default page size id (see pageSizes below)
      landscape:   true = page sizes are used sideways
      lineArt:     true = everything becomes black & white coloring line art
+     book:        true = uses the children's book arrangements, sizes and kits below
   */
   formats: [
     { id: "invitation", label: "Invitation", emoji: "💌", shape: "an invitation card", size: "5x7" },
     { id: "postcard", label: "Postcard", emoji: "📮", shape: "a postcard front", size: "4x6", landscape: true },
     { id: "greeting", label: "Greeting Card", emoji: "🎉", shape: "a folded greeting card front", size: "5x7" },
     { id: "coloring", label: "Coloring Book", emoji: "🖍️", shape: "a coloring book page", size: "letter", lineArt: true },
+    { id: "book", label: "Children's Book", emoji: "📚", shape: "a full-color children's picture book", size: "bk85", book: true },
     { id: "poster", label: "Wall Art", emoji: "🖼️", shape: "a framed art print", size: "8x10" },
     { id: "social", label: "Social Post", emoji: "📱", shape: "a social media graphic", size: "sq5" },
     { id: "stickers", label: "Stickers", emoji: "⭐", shape: "a sheet of die-cut stickers", size: "letter" },
@@ -45,7 +47,21 @@ window.GENIE_CONFIG = {
       framing: [["ground strip", 1], ["sky piece", 1]] },
     { id: "border", label: "Border", hint: "Decoration all the way around",
       describe: "a decorative border running around all four edges with an open centre",
-      framing: [["border strip", 1], ["corner piece", 1]] }
+      framing: [["border strip", 1], ["corner piece", 1]] },
+
+    /* Children's book page layouts (bookOnly). spread: true = two facing pages */
+    { id: "book-genie", bookOnly: true, label: "Genie's choice", hint: "A layout that suits each scene",
+      describe: "a page layout that suits the scene, always leaving a calm, uncluttered area for the story text" },
+    { id: "book-full", bookOnly: true, label: "Full-page picture", hint: "Art fills the page, text sits on a calm area",
+      describe: "a full-bleed illustration filling the whole page, with a calm, uncluttered area where the story text can sit on top" },
+    { id: "book-spread", bookOnly: true, label: "Double-page spread", hint: "One wide picture across two pages", spread: true,
+      describe: "one wide illustration across two facing pages, with nothing important in the middle where the pages fold, and a calm area for the story text" },
+    { id: "book-below", bookOnly: true, label: "Picture above, text below", hint: "Text area along the bottom",
+      describe: "an illustration in the top two-thirds of the page that fades softly into a plain area across the bottom third for the story text" },
+    { id: "book-side", bookOnly: true, label: "Side by side", hint: "Picture on one side, text on the other",
+      describe: "an illustration on one side of the page with a plain, softly textured area on the other side for the story text" },
+    { id: "book-spot", bookOnly: true, label: "Spot illustration", hint: "A small picture on a white page",
+      describe: "a spot illustration (vignette) with soft edges floating on a white page, with plenty of white space around it for the story text" }
   ],
 
   /* ---------- STEP 3: ART STYLES ----------
@@ -122,7 +138,16 @@ window.GENIE_CONFIG = {
     { id: "letter", label: "US Letter" },
     { id: "8x10", label: "8 × 10 in" },
     { id: "phone", label: "Phone 9:16", fixed: "tall 9:16 phone screen" },
-    { id: "banner", label: "Banner 3:1", fixed: "wide 3:1 banner" }
+    { id: "banner", label: "Banner 3:1", fixed: "wide 3:1 banner" },
+
+    /* Children's book trim sizes (bookOnly) */
+    { id: "bk85", label: "8.5 × 8.5 in", bookOnly: true, square: true },
+    { id: "bk8x8", label: "8 × 8 in", bookOnly: true, square: true },
+    { id: "bk8x10", label: "8 × 10 in", bookOnly: true },
+    { id: "bk10x8", label: "10 × 8 in (landscape)", bookOnly: true, fixed: "10 × 8 in, landscape" },
+    { id: "bk85x11", label: "8.5 × 11 in", bookOnly: true },
+    { id: "bk7x10", label: "7 × 10 in", bookOnly: true },
+    { id: "bk6x9", label: "6 × 9 in", bookOnly: true }
   ],
 
   /* ---------- STEP 4: KITS ----------
@@ -196,6 +221,57 @@ window.GENIE_CONFIG = {
                      "a night-time version of the main scene", "a seasonal variation of the main scene"] },
         { id: "title", kind: "title", title: "Title plaques", optional: true,
           variants: ["a blank decorative title plaque", "a blank ribbon-style title banner"] }
+      ]
+    }
+  ],
+
+  /* ---------- CHILDREN'S BOOK KITS ----------
+     Same idea as the kits above, plus:
+       ref: true       = a character reference sheet (same scale, side by side)
+       kind "pages"    = one illustration per line of the story she types
+       kind "cover"    = the front cover
+  */
+  bookKits: [
+    {
+      id: "finished", label: "Single page", tag: "",
+      blurb: "One finished full-color page illustration. Good for trying out a look.",
+      finished: true
+    },
+    {
+      id: "characters", label: "Character set", tag: "Start here",
+      blurb: "Settle how your characters look before drawing any pages, so they match on every page.",
+      items: [
+        { id: "hero", kind: "sheet", ref: true, title: "Main character turnaround",
+          pieces: [["main character, front view", 1], ["main character, three-quarter view", 1],
+                   ["main character, side view", 1], ["main character, back view", 1]] },
+        { id: "expr", kind: "sheet", ref: true, title: "Expressions and poses",
+          pieces: [["main character looking happy", 1], ["main character looking sad", 1], ["main character looking surprised", 1],
+                   ["main character looking worried", 1], ["main character laughing", 1], ["main character sleepy", 1],
+                   ["main character running", 1], ["main character sitting", 1], ["main character waving", 1]] },
+        { id: "cast", kind: "sheet", ref: true, title: "Supporting cast",
+          pieces: [["supporting character, front view", 3], ["supporting character, in an action pose", 3]] }
+      ]
+    },
+    {
+      id: "book", label: "Picture book", tag: "Whole book",
+      blurb: "Character sheets, then one illustration for every page of your story, a cover and extras.",
+      items: [
+        { id: "hero", kind: "sheet", ref: true, title: "Main character turnaround",
+          pieces: [["main character, front view", 1], ["main character, three-quarter view", 1],
+                   ["main character, side view", 1], ["main character, back view", 1]] },
+        { id: "expr", kind: "sheet", ref: true, title: "Expressions and poses",
+          pieces: [["main character looking happy", 1], ["main character looking sad", 1], ["main character looking surprised", 1],
+                   ["main character looking worried", 1], ["main character laughing", 1], ["main character sleepy", 1],
+                   ["main character running", 1], ["main character sitting", 1], ["main character waving", 1]] },
+        { id: "cast", kind: "sheet", ref: true, title: "Supporting cast",
+          pieces: [["supporting character, front view", 3], ["supporting character, in an action pose", 3]] },
+        { id: "places", kind: "sheet", title: "Places in the story", optional: true,
+          pieces: [["main location", 1], ["second location", 1], ["third location", 1], ["small background detail", 3]] },
+        { id: "props", kind: "sheet", title: "Story props", optional: true, pieces: [["story prop", 6]] },
+        { id: "pages", kind: "pages", title: "Story pages" },
+        { id: "cover", kind: "cover", title: "Front cover", variants: ["the front cover"] },
+        { id: "endpapers", kind: "paper", title: "Endpapers", optional: true,
+          variants: ["a repeating endpaper pattern of small motifs from the story"] }
       ]
     }
   ],

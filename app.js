@@ -12,6 +12,7 @@
     style: "", finish: "polished", moods: [], palette: "genie", customPalette: "",
     kit: "starter", size: "5x7", incl: {}, mustHaves: "",
     textMode: "blank", wording: "",
+    bookTitle: "", mainChar: "", otherChars: "", story: "",
     chatLink: "", done: {}, picked: {}
   };
 
@@ -31,31 +32,45 @@
   const byId = (list, id) => list.find((x) => x.id === id) || list[0];
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const fmt = () => byId(C.formats, S.format);
-  const comp = () => byId(C.compositions, S.composition);
+  const isBook = () => !!fmt().book;
+  const compsFor = () => C.compositions.filter((c) => !!c.bookOnly === isBook());
+  const sizesFor = () => C.pageSizes.filter((p) => !!p.bookOnly === isBook());
+  const kitsFor = () => (isBook() ? C.bookKits : C.kits);
+  const comp = () => byId(compsFor(), S.composition);
   const style = () => C.styles.find((s) => s.id === S.style);
   const finish = () => byId(C.finishes, S.finish);
   const palette = () => byId(C.palettes, S.palette);
-  const kit = () => byId(C.kits, S.kit);
+  const kit = () => byId(kitsFor(), S.kit);
   const lineArt = () => !!fmt().lineArt;
 
   function plural(name) {
-    for (const sep of [" (", " in "]) {
+    let at = -1;
+    for (const sep of [" (", " in ", ", "]) {
       const i = name.indexOf(sep);
-      if (i > 0) return name.slice(0, i) + "s" + name.slice(i);
+      if (i > 0 && (at < 0 || i < at)) at = i;
     }
-    return name + "s";
+    return at > 0 ? name.slice(0, at) + "s" + name.slice(at) : name + "s";
   }
   const pieceLabel = ([name, n]) => (n === 1 ? name : `${n} ${plural(name)}`);
 
   function piecesOf(item) {
     const out = [];
-    item.pieces.forEach((p) => (p === "@framing" ? comp().framing.forEach((f) => out.push(f)) : out.push(p)));
+    item.pieces.forEach((p) => (p === "@framing" ? (comp().framing || []).forEach((f) => out.push(f)) : out.push(p)));
     return out;
   }
+  // One line of the story = one page. Strips "Page 3:", "3." or "-" from the start of a line.
+  function storyLines() {
+    return S.story.split("\n")
+      .map((l) => l.replace(/^\s*(page\s*\d+\s*[:.)\-–]?|\d+\s*[:.)\-–]|[-•*])\s*/i, "").trim())
+      .filter(Boolean);
+  }
+  const variantsOf = (item) => (item.kind === "pages" ? storyLines() : item.variants);
   function itemCounts(item) {
     if (item.kind === "sheet") return { pieces: piecesOf(item).reduce((a, p) => a + p[1], 0), images: 1 };
-    return { pieces: item.variants.length, images: item.variants.length };
+    const n = variantsOf(item).length;
+    return { pieces: n, images: n };
   }
+  function hasPages(k) { return !k.finished && k.items.some((it) => it.kind === "pages" && included(k, it)); }
   const inclKey = (k, item) => `${k.id}.${item.id}`;
   function included(k, item) {
     const v = S.incl[inclKey(k, item)];
@@ -69,8 +84,9 @@
       return { pieces: a.pieces + c.pieces, images: a.images + c.images };
     }, { pieces: 0, images: 0 });
   }
-  function sizeText() {
+  function sizeText(singlePage) {
     const p = byId(C.pageSizes, S.size);
+    if (!singlePage && comp().spread) return `a double-page spread: two ${p.label.replace(/ \(.*\)$/, "")} pages side by side, so twice as wide as one page`;
     if (p.fixed) return p.fixed;
     if (p.square) return `square, ${p.label.replace(/^Square /, "")}`;
     return `${p.label}, ${fmt().landscape ? "landscape" : "portrait"}`;
@@ -95,6 +111,7 @@
     } else {
       lines.push(`Style: ${s.prompt}; ${finish().prompt}.`);
     }
+    if (isBook()) lines.push("Full-color illustration throughout.");
     if (S.moods.length) lines.push(`Mood: ${S.moods.join(", ").toLowerCase()}.`);
     if (!lineArt()) lines.push(`Color palette: ${paletteWords()}.`);
     return lines.join("\n");
@@ -105,10 +122,22 @@
   function mustLine() {
     return S.mustHaves.trim() ? `Where it fits, be sure to include: ${S.mustHaves.trim()}.` : "";
   }
+  // Children's books: the same character description goes into every prompt
+  function castBlock() {
+    if (!isBook()) return "";
+    const main = S.mainChar.trim() || "design an appealing, memorable main character that suits the story";
+    return `Characters (draw them exactly like this every time):\n- Main character: ${main}` +
+      (S.otherChars.trim() ? `\n- Other characters: ${S.otherChars.trim()}` : "");
+  }
+  const bookName = () => (S.bookTitle.trim() ? `the children's picture book "${S.bookTitle.trim()}"` : "a children's picture book");
+  const kitWord = () => (isBook() ? "book" : "kit");
   const QUALITY = "High resolution, crisp clean edges, no watermarks, no signatures.";
   const join = (parts) => parts.filter(Boolean).join("\n\n");
 
   function consistencyLine(isFirst) {
+    if (isBook()) return isFirst
+      ? `I'm illustrating ${bookName()}, one image at a time in this chat. Every image must share exactly the same full-color art style, palette and character designs, and each character must look identical every time they appear.`
+      : "Next image for the same picture book. Match the earlier images in this chat exactly: same art style and colors, with every character drawn exactly as in the character sheets above.";
     return isFirst
       ? "I'm making a matching clipart kit, one image at a time in this chat. Every image must share exactly the same art style, colors, line quality and character designs, so please keep them consistent from here on."
       : "Next image for the same kit. Match the earlier images in this chat exactly: same art style, colors, line quality and character designs.";
@@ -117,35 +146,57 @@
   function sheetPrompt(item, n, total, isFirst) {
     const list = piecesOf(item).map((p) => `- ${pieceLabel(p)}`).join("\n");
     const count = itemCounts(item).pieces;
+    if (item.ref) {
+      return join([
+        "Please create an image.",
+        consistencyLine(isFirst),
+        `Image ${n} of ${total}: a character reference sheet called "${item.title}" for ${bookName()} about ${themePhrase()}.\nDraw these ${count} separate figures:\n${list}`,
+        "Draw every figure at the same scale, side by side in a tidy grid on a plain white background, as a landscape 3:2 image. Each figure must be complete and clearly separated: no overlapping, nothing cropped, no labels and no text.",
+        castBlock(),
+        lookBlock(),
+        "These are the reference drawings for the whole book, so keep the designs clear and simple enough to repeat exactly on every page.",
+        QUALITY
+      ]);
+    }
     return join([
       "Please create an image.",
       consistencyLine(isFirst),
       `Image ${n} of ${total}: a clipart sheet called "${item.title}" for a ${themePhrase()} kit.\nDraw these ${count} separate pieces:\n${list}`,
       "Arrange them in a tidy grid on a plain white background, as a landscape 3:2 image. Each piece must be complete and clearly separated with space around it so it can be cut out: no overlapping, nothing cropped, no labels and no text.",
+      castBlock(),
       lookBlock(),
       mustLine(),
-      `The pieces will be used to build ${fmt().shape} (${sizeText()}) with ${comp().describe}.`,
+      isBook() ? `The pieces will be used in the illustrations for ${bookName()}.`
+               : `The pieces will be used to build ${fmt().shape} (${sizeText()}) with ${comp().describe}.`,
       QUALITY
     ]);
   }
 
-  function singlePrompt(item, variant, n, total, isFirst) {
+  function singlePrompt(item, variant, n, total, isFirst, vi, vcount) {
     const t = themePhrase();
+    const kw = kitWord();
     let what;
     switch (item.kind) {
+      case "pages":
+        what = `Image ${n} of ${total}: the illustration for page ${vi + 1} of ${vcount} of ${bookName()} about ${t}.\nScene: ${variant}\nLayout: ${comp().describe}. Size: ${sizeText()}.\nDo not include any text, letters or words: the story text will be added later.`;
+        break;
+      case "cover":
+        what = `Image ${n} of ${total}: the front cover of ${bookName()} about ${t}. Show the main character in an inviting scene that captures the story. Leave a clear, calm area across the top third for the title, with no lettering (the title will be added later). Size: ${sizeText(true)}.`;
+        break;
       case "paper":
-        what = `Image ${n} of ${total}: a background paper for the ${t} kit: ${variant}, using motifs and colors from the kit. Fill the entire image edge to edge as a flat, seamless pattern. No characters, no single focal object, no border, no text. Size: ${sizeText()}.`;
+        what = `Image ${n} of ${total}: a background paper for the ${t} ${kw}: ${variant}, using motifs and colors from the ${kw}. Fill the entire image edge to edge as a flat, seamless pattern. No characters, no single focal object, no border, no text. Size: ${sizeText()}.`;
         break;
       case "frame":
-        what = `Image ${n} of ${total}: a decorative frame for the ${t} kit: ${variant} built from the kit's motifs, laid out as ${comp().describe}. Leave the centre completely empty and plain white so wording or a photo can go there. No text. Size: ${sizeText()}.`;
+        what = `Image ${n} of ${total}: a decorative frame for the ${t} ${kw}: ${variant} built from the ${kw}'s motifs, laid out as ${comp().describe}. Leave the centre completely empty and plain white so wording or a photo can go there. No text. Size: ${sizeText()}.`;
         break;
       case "scene":
-        what = `Image ${n} of ${total}: a background scene for the ${t} kit: ${variant}. Leave it free of characters so pieces can be placed on top, with open space in the middle. No text. Size: ${sizeText()}.`;
+        what = `Image ${n} of ${total}: a background scene for the ${t} ${kw}: ${variant}. Leave it free of characters so pieces can be placed on top, with open space in the middle. No text. Size: ${sizeText()}.`;
         break;
       default:
-        what = `Image ${n} of ${total}: ${variant} for the ${t} kit, decorated with the kit's motifs and isolated on a plain white background. Leave it blank (no letters or words) so a title can be added later. Landscape 3:2.`;
+        what = `Image ${n} of ${total}: ${variant} for the ${t} ${kw}, decorated with the ${kw}'s motifs and isolated on a plain white background. Leave it blank (no letters or words) so a title can be added later. Landscape 3:2.`;
     }
-    return join(["Please create an image.", consistencyLine(isFirst), what, lookBlock(), QUALITY]);
+    return join(["Please create an image.", consistencyLine(isFirst), what,
+      item.kind === "paper" ? "" : castBlock(), lookBlock(), item.kind === "pages" ? mustLine() : "", QUALITY]);
   }
 
   function finishedPrompt() {
@@ -159,7 +210,9 @@
     }
     return join([
       "Please create an image.",
-      `A complete, ready-to-use ${fmt().shape} (${sizeText()}) with a ${themePhrase()} theme.`,
+      isBook() ? `A finished full-color page illustration for ${bookName()} about ${themePhrase()} (${sizeText()}).`
+               : `A complete, ready-to-use ${fmt().shape} (${sizeText()}) with a ${themePhrase()} theme.`,
+      castBlock(),
       `Layout: ${comp().describe}. Use a balanced, professional composition with a clear focal point, and keep important details away from the edges so nothing is cut off when printed.`,
       lookBlock(),
       mustLine(),
@@ -173,6 +226,7 @@
       "Please create an image.",
       `Make the ${name.replace(/^(.*) #(\d+)$/, (m, n, d) => `${n} that appears number ${d} on the sheet (counting left to right, top to bottom)`)} from the "${sheet.title}" sheet above as its own full-size image. Show only that single piece, centered and large, on a plain white background (transparent if you can).`,
       "Keep its design, colors and style exactly as they are on the sheet. No other pieces, no text. Square 1:1.",
+      castBlock(),
       QUALITY
     ]);
   }
@@ -184,7 +238,7 @@
     const jobs = [];
     k.items.filter((it) => included(k, it)).forEach((it) => {
       if (it.kind === "sheet") jobs.push({ item: it });
-      else it.variants.forEach((v, i) => jobs.push({ item: it, variant: v, i }));
+      else variantsOf(it).forEach((v, i) => jobs.push({ item: it, variant: v, i }));
     });
     return jobs.map((j, idx) => {
       const n = idx + 1, first = idx === 0, it = j.item;
@@ -193,9 +247,10 @@
         return { key: `${k.id}.${it.id}`, title: it.title, sub: `Sheet of ${c}: ${piecesOf(it).map(pieceLabel).join(", ")}`,
                  prompt: sheetPrompt(it, n, jobs.length, first) };
       }
-      const multi = it.variants.length > 1 ? ` ${j.i + 1} of ${it.variants.length}` : "";
-      return { key: `${k.id}.${it.id}.${j.i}`, title: it.title + multi, sub: j.variant.replace(/^an? /, ""),
-               prompt: singlePrompt(it, j.variant, n, jobs.length, first) };
+      const vs = variantsOf(it);
+      const title = it.kind === "pages" ? `Page ${j.i + 1}` : it.title + (vs.length > 1 ? ` ${j.i + 1} of ${vs.length}` : "");
+      return { key: `${k.id}.${it.id}.${j.i}` + (it.kind === "pages" ? `.${j.variant}` : ""), title, sub: j.variant.replace(/^an? /, ""),
+               prompt: singlePrompt(it, j.variant, n, jobs.length, first, j.i, vs.length) };
     });
   }
 
@@ -253,8 +308,9 @@
       <div class="grid">${C.formats.map((f) => card("format", f.id, f.id === S.format,
         `<span class="em">${f.emoji}</span><span>${esc(f.label)}</span>`)).join("")}</div>
       ${lineArt() ? '<p class="note">Coloring book pages are always made as black-and-white line art.</p>' : ""}
-      <h3 class="label">Arrangement</h3>
-      <div class="grid wide">${C.compositions.map((c) => card("composition", c.id, c.id === S.composition,
+      <h3 class="label">${isBook() ? "Page layout" : "Arrangement"}</h3>
+      ${isBook() ? '<p class="note">Children\'s book pages are always full color, and every layout leaves room for your story text.</p>' : ""}
+      <div class="grid wide">${compsFor().map((c) => card("composition", c.id, c.id === S.composition,
         `<strong>${esc(c.label)}</strong><small>${esc(c.hint)}</small>`, "text")).join("")}</div>`;
   }
 
@@ -288,8 +344,8 @@
 
   function viewPlan() {
     const k = kit();
-    const sizes = C.pageSizes.map((p) => chip("size", p.id, p.id === S.size, p.label)).join("");
-    const kits = C.kits.map((kk) => {
+    const sizes = sizesFor().map((p) => chip("size", p.id, p.id === S.size, p.label)).join("");
+    const kits = kitsFor().map((kk) => {
       const c = kitCounts(kk, false);
       return card("kit", kk.id, kk.id === S.kit, `
         <span class="kit-head"><strong>${esc(kk.label)}</strong>${kk.tag ? `<span class="tag">${esc(kk.tag)}</span>` : ""}</span>
@@ -312,30 +368,48 @@
           <textarea id="f-words" data-field="wording" placeholder="You're invited!&#10;Emma's 13th Birthday Spa Day&#10;Saturday, June 8 at 2 PM">${esc(S.wording)}</textarea>` : ""}`;
     } else {
       contents = `
-        <h3 class="label">Your ${esc(k.label.toLowerCase())} kit <small>· ${esc(comp().label)} arrangement</small></h3>
+        <h3 class="label">${isBook() ? `Your ${esc(k.label.toLowerCase())}` : `Your ${esc(k.label.toLowerCase())} kit`} <small>· ${esc(comp().label)} ${isBook() ? "layout" : "arrangement"}</small></h3>
         <div class="items">${k.items.map((it) => {
           const c = itemCounts(it);
           const on = included(k, it);
           const desc = it.kind === "sheet"
             ? `One sheet of ${c.pieces}: ${piecesOf(it).map(pieceLabel).join(", ")}`
-            : `${c.images} separate image${c.images > 1 ? "s" : ""}: ${it.variants.map((v) => v.replace(/^an? /, "")).join(", ")}`;
+            : it.kind === "pages"
+              ? (c.images ? `${c.images} illustration${c.images > 1 ? "s" : ""}, one for each line of your story` : "One illustration per line of your story (type it below)")
+              : `${c.images} separate image${c.images > 1 ? "s" : ""}: ${it.variants.map((v) => v.replace(/^an? /, "")).join(", ")}`;
           return `<label class="item ${on ? "" : "off"}">
-            <span class="badge">${it.kind === "sheet" ? c.pieces : "✦"}</span>
+            <span class="badge">${it.kind === "sheet" ? c.pieces : it.kind === "pages" ? "📖" : "✦"}</span>
             <span class="item-body"><strong>${esc(it.title)}</strong>${it.optional ? ' <span class="opt">optional</span>' : ""}<small>${esc(desc)}</small></span>
             <span class="incl"><input type="checkbox" data-act="incl" data-id="${esc(it.id)}" ${on ? "checked" : ""}> Include</span>
           </label>`;
         }).join("")}</div>`;
     }
 
+    const pageCount = storyLines().length;
+    const story = !isBook() ? "" : `
+      <h3 class="label">Your story</h3>
+      ${k.finished ? "" : `<label class="field" for="f-title">Book title <small>(optional)</small></label>
+      <input type="text" id="f-title" data-field="bookTitle" value="${esc(S.bookTitle)}" placeholder="e.g. Benny and the Big Snow Day">`}
+      <label class="field" for="f-main">Main character <small>(describe how they look, so they match on every page)</small></label>
+      <textarea id="f-main" data-field="mainChar" placeholder="e.g. Benny, a small brown bunny with floppy ears, a blue striped scarf and round glasses">${esc(S.mainChar)}</textarea>
+      <label class="field" for="f-others">Other characters <small>(optional)</small></label>
+      <textarea id="f-others" data-field="otherChars" placeholder="e.g. Grandma Owl, a plump grey owl in a lilac shawl; Pip, a tiny yellow chick">${esc(S.otherChars)}</textarea>
+      ${hasPages(k) ? `<label class="field" for="f-story">Story pages <small>· one line per page · <span id="storyCount">${pageCount} page${pageCount === 1 ? "" : "s"}</span></small></label>
+      <textarea id="f-story" class="tall" data-field="story" placeholder="Benny wakes up and sees snow outside his window.&#10;He races outside and slides down the big hill.&#10;He finds Pip shivering under a bush.&#10;Benny gives Pip his blue scarf.">${esc(S.story)}</textarea>
+      <p class="note">Describe what happens in the picture on each page. You'll add the actual story text later in Canva or your book software.</p>` : ""}`;
+
     return `
-      <h1>Plan my kit</h1>
+      <h1>Plan my ${isBook() ? "book" : "kit"}</h1>
       <p class="lead">${k.finished ? "You'll get one prompt for a complete design."
+        : isBook() ? "Make the character sheets first so your characters look the same on every page. Then each page of your story gets its own prompt."
         : "Your kit is made as sheets of pieces first, so you can see everything in ChatGPT. Afterwards you choose which pieces to make as separate full-size images."}</p>
       <h3 class="label">Kit size</h3>
       <div class="grid kits">${kits}</div>
       <h3 class="label">Page size</h3>
       <div class="chips">${sizes}</div>
+      ${isBook() ? '<p class="note">Common print-on-demand trim sizes (like Amazon KDP).</p>' : ""}
       ${contents}
+      ${story}
       <label class="field" for="f-must">Must-haves <small>(optional)</small></label>
       <textarea id="f-must" data-field="mustHaves" placeholder="e.g. a fox with a lantern, a little bridge">${esc(S.mustHaves)}</textarea>`;
   }
@@ -440,6 +514,7 @@
   function validate() {
     if (S.step === 1 && !S.theme.trim()) return "Please type a theme first.";
     if (S.step === 3 && !S.style) return "Please pick an art style.";
+    if (S.step === 4 && hasPages(kit()) && !storyLines().length) return "Type at least one story page (one line per page), or untick Story pages.";
     return "";
   }
   function go(n) {
@@ -471,7 +546,12 @@
         S = JSON.parse(JSON.stringify(DEFAULTS));
         return render();
       case "idea": S.theme = id; break;
-      case "format": S.format = id; S.size = fmt().size; break;
+      case "format":
+        S.format = id;
+        S.size = fmt().size;
+        if (!compsFor().some((c) => c.id === S.composition)) S.composition = compsFor()[0].id;
+        if (!kitsFor().some((k) => k.id === S.kit)) S.kit = kitsFor()[1].id;
+        break;
       case "composition": S.composition = id; break;
       case "style": S.style = id; break;
       case "finish": S.finish = id; break;
@@ -496,6 +576,8 @@
     const f = e.target.dataset.field;
     if (!f) return;
     S[f] = e.target.value;
+    if ($("#error")) $("#error").textContent = "";
+    if (f === "story" && $("#storyCount")) { const n = storyLines().length; $("#storyCount").textContent = `${n} page${n === 1 ? "" : "s"}`; }
     renderSidebar();
     save();
     if (f === "textMode") render();

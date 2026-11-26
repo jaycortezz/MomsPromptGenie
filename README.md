@@ -14,6 +14,12 @@ ChatGPT prompt needed to make it. No logins, no API keys, no cost: the images ar
    - Each next prompt is copied and pasted into the **same chat**, so everything matches
    - **Make full-size pieces:** tap any piece from a sheet to get a prompt that turns it into its own full-size image
 
+**Children's Book** is its own format with picture-book page layouts (full page, double-page spread,
+picture above text, side by side, spot illustration), common print trim sizes, and three kits:
+a single page, a character set (turnaround, expressions, supporting cast) and a full picture book.
+For a full book, the story is typed one line per page, and each line becomes its own page illustration
+prompt. The character descriptions are repeated in every prompt so the characters stay consistent.
+
 The **My kit** sidebar shows a summary and can save the ChatGPT chat link, so you can get back to the kit's chat.
 Everything is saved in the browser automatically.
 
