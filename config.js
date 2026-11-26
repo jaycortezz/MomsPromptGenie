@@ -185,7 +185,13 @@ window.GENIE_CONFIG = {
     { id: "sparkles", label: "Sparkles", on: true,
       prompt: "a small set of sparkles, stars or tiny accents" },
     { id: "animals", label: "Animals", on: false,
-      prompt: "animals or critters that fit the theme" }
+      prompt: "animals or critters that fit the theme" },
+    { id: "backgrounds", label: "Backgrounds", on: false,
+      prompt: "background scenes (complete backdrops such as a sky, skyline, room or landscape, each drawn as its own rectangle, with no characters in them)" },
+    { id: "scenepieces", label: "Scene pieces", on: false,
+      prompt: "scene pieces: cut-out stages or platforms for characters to stand on, such as a patio, porch, garden path or stage, each with no background behind it" },
+    { id: "frames", label: "Frames", on: false,
+      prompt: "decorative frames built from the theme's motifs, each with a completely empty centre for wording or a photo" }
   ],
 
   /* ---------- STEP 4: KITS ----------

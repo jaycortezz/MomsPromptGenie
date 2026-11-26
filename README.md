@@ -10,7 +10,7 @@ ChatGPT prompt needed to make it. No logins, no API keys, no cost: the images ar
 3. **Look:** art style, finish, up to 3 moods, and a color palette
 4. **Plan:** what to make, the page size and any must-haves:
    - **Design elements** (default): one sheet of full-color artwork pieces on the theme. Choose 6 to 20 elements,
-     what goes on it (people, food & objects, florals, bows & corners, sparkles, animals), an optional description
+     what goes on it (people, food & objects, florals, bows & corners, sparkles, animals, backgrounds, scene pieces, frames), an optional description
      of the people, and a white or transparent background
    - **Full page design:** one finished, ready-to-use piece, with a choice of how the page is arranged
    - **Complete kit:** Starter, Bundle or Mega, with a choice of which sheets to include

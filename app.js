@@ -397,6 +397,7 @@
         ${S.mix.includes("people") ? `<label class="field" for="f-people">Describe the people <small>(optional)</small></label>
         <input type="text" id="f-people" data-field="peopleDesc" value="${esc(S.peopleDesc)}" placeholder="e.g. a grandmother with silver curls and glasses, a young woman with curly hair, a young man with a beard">` : ""}
         <p class="note">ChatGPT picks the exact pieces to match your theme. Anything specific you want goes in Must-haves below.</p>
+        ${S.mix.some((m) => ["backgrounds", "scenepieces", "frames"].includes(m)) ? '<p class="note">Backgrounds, scene pieces and frames come out small on a sheet. To use one at full size, tap its number under "Make full-size pieces" on the next screen.</p>' : ""}
         <h3 class="label">Background</h3>
         <div class="chips">${chip("bg", "white", S.bg !== "transparent", "Plain white")}${chip("bg", "transparent", S.bg === "transparent", "Transparent (PNG)")}</div>
         <p class="note">Transparent is easiest for dropping elements straight into Canva.</p>`;
