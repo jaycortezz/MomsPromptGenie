@@ -88,13 +88,13 @@
   .choice.text { align-items: flex-start; text-align: left; padding: 12px 14px; }
   .choice small { font-weight: 400; color: var(--muted); font-size: 13px; line-height: 1.35; }
   .choice .em { font-size: 28px; line-height: 1; }
-  .choice:hover { border-color: var(--accent); }
+  @media (hover: hover) { .choice:hover { border-color: var(--accent); } }
   .choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
   .choice[aria-pressed="true"]::after {
     content: "✓"; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%;
     background: var(--accent); color: var(--accent-ink); font-size: 12px; display: grid; place-items: center;
   }
-  .kit .kit-head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding-right: 22px; }
+  .choice .kit-head { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding-right: 22px; }
   .kit .counts { font-size: 13px; color: var(--accent-dark); font-weight: 800; }
   .tag { font-size: 11px; font-weight: 800; background: var(--honey-soft); color: var(--honey-ink); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
 
@@ -103,7 +103,7 @@
     border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 14px; font-weight: 700; cursor: pointer;
   }
   .chip.small { padding: 4px 11px; font-size: 14px; }
-  .chip:hover:not(:disabled) { border-color: var(--accent); }
+  @media (hover: hover) { .chip:hover:not(:disabled) { border-color: var(--accent); } }
   .chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); }
   .chip:disabled { opacity: .45; cursor: not-allowed; }
   .ideas { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }

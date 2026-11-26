@@ -2,7 +2,7 @@
 (() => {
   const C = window.GENIE_CONFIG;
   const KEY = "prompt-genie-v2";
-  const STEPS = ["Theme", "Layout", "Look", "Plan", "Build"];
+  const STEPS = ["Theme", "Format", "Look", "Plan", "Build"];
   const CHATGPT = "https://chatgpt.com/";
 
   const DEFAULTS = {
@@ -12,7 +12,8 @@
     style: "", finish: "polished", moods: [], palette: "genie", customPalette: "",
     kit: "starter", size: "5x7", incl: {}, mustHaves: "",
     textMode: "blank", wording: "",
-    output: "full", elemCount: 12, bg: "white",
+    output: "elements", elemCount: 12, bg: "white",
+    mix: C.elementMix.filter((m) => m.on).map((m) => m.id), peopleDesc: "",
     bookTitle: "", mainChar: "", otherChars: "", story: "",
     chatLink: "", done: {}, picked: {}
   };
@@ -49,10 +50,8 @@
   }
   function elementsKit() {
     const n = +S.elemCount || 12;
-    const main = Math.ceil(n / 3), accents = Math.ceil((n - main) / 2), fillers = n - main - accents;
-    const pieces = [["main motif", main], ["decorative accent", accents]];
-    if (fillers) pieces.push(["small filler element", fillers]);
-    return { id: "elements", label: "Design elements", items: [{ id: "elements", kind: "sheet", title: "Design elements", pieces }] };
+    return { id: "elements", label: "Design elements",
+             items: [{ id: "elements", kind: "sheet", elements: true, title: "Design elements", pieces: [["element", n]] }] };
   }
   const transparentBg = () => S.output === "elements" && S.bg === "transparent";
   const lineArt = () => !!fmt().lineArt;
@@ -160,6 +159,7 @@
   function sheetPrompt(item, n, total, isFirst) {
     const list = piecesOf(item).map((p) => `- ${pieceLabel(p)}`).join("\n");
     const count = itemCounts(item).pieces;
+    if (item.elements) return elementsPrompt(count);
     if (item.ref) {
       return join([
         "Please create an image.",
@@ -183,6 +183,26 @@
       mustLine(),
       isBook() ? `The pieces will be used in the illustrations for ${bookName()}.`
                : `The pieces will be used to build ${fmt().shape} (${sizeText()}) with ${comp().describe}.`,
+      QUALITY
+    ]);
+  }
+
+  // The main "Design elements" sheet
+  function elementsPrompt(count) {
+    const mix = C.elementMix.filter((m) => S.mix.includes(m.id));
+    const people = S.mix.includes("people") && S.peopleDesc.trim() ? `People or characters to include: ${S.peopleDesc.trim()}.` : "";
+    const color = lineArt() ? "black-and-white line art" : "full-color";
+    return join([
+      "Please create an image.",
+      `A clipart sheet of ${count} separate, ${color} design elements for a ${themePhrase()} theme.`,
+      `Include a varied mix of:\n${mix.map((m) => `- ${m.prompt}`).join("\n")}`,
+      `Choose the specific elements yourself so they clearly say "${S.theme.trim()}" at a glance, with no two the same. Make some pieces larger and some smaller, like a professional clipart set.`,
+      people,
+      castBlock(),
+      `Arrange them in a tidy grid ${transparentBg() ? "on a transparent background (a PNG with no background at all)" : "on a plain white background"}, as a landscape 3:2 image. Each element must be complete and clearly separated with space around it so it can be cut out: no overlapping, nothing cropped, no labels and no text.`,
+      lookBlock(),
+      mustLine(),
+      `They'll be used to make ${isBook() ? bookName() : fmt().shape}, so every piece must share the same style and colors.`,
       QUALITY
     ]);
   }
@@ -293,7 +313,7 @@
 
   function renderMain() {
     const views = [null, viewTheme, viewLayout, viewLook, viewPlan, viewBuild];
-    const nextLabel = ["", "Next: layout →", "Next: look →", "Next: plan my kit →", "Looks good: make my prompts →", ""][S.step];
+    const nextLabel = ["", "Next: format →", "Next: look →", "Next: plan my kit →", "Looks good: make my prompts →", ""][S.step];
     $("#main").innerHTML = views[S.step]() + `
       <p class="error" id="error" role="alert"></p>
       <div class="nav">
@@ -317,16 +337,13 @@
 
   function viewLayout() {
     return `
-      <h1>Choose a layout</h1>
-      <p class="lead">What are we making, and how should it be arranged?</p>
+      <h1>What are you making?</h1>
+      <p class="lead">Pick the kind of project. You'll choose what to create from it in step 4.</p>
       <h3 class="label">Format</h3>
       <div class="grid">${C.formats.map((f) => card("format", f.id, f.id === S.format,
         `<span class="em">${f.emoji}</span><span>${esc(f.label)}</span>`)).join("")}</div>
       ${lineArt() ? '<p class="note">Coloring book pages are always made as black-and-white line art.</p>' : ""}
-      <h3 class="label">${isBook() ? "Page layout" : "Arrangement"}</h3>
-      ${isBook() ? '<p class="note">Children\'s book pages are always full color, and every layout leaves room for your story text.</p>' : ""}
-      <div class="grid wide">${compsFor().map((c) => card("composition", c.id, c.id === S.composition,
-        `<strong>${esc(c.label)}</strong><small>${esc(c.hint)}</small>`, "text")).join("")}</div>`;
+      ${isBook() ? '<p class="note">Children\'s book pages are always full color.</p>' : ""}`;
   }
 
   function viewLook() {
@@ -361,7 +378,7 @@
     const k = kit();
     const sizes = sizesFor().map((p) => chip("size", p.id, p.id === S.size, p.label)).join("");
     const outs = C.outputs.map((o) => card("output", o.id, o.id === S.output,
-      `<span class="em">${o.emoji}</span><strong>${esc(o.label)}</strong><small>${esc(isBook() && o.bookBlurb ? o.bookBlurb : o.blurb)}</small>`, "text out")).join("");
+      `<span class="em">${o.emoji}</span><span class="kit-head"><strong>${esc(o.label)}</strong>${o.tag ? `<span class="tag">${esc(o.tag)}</span>` : ""}</span><small>${esc(isBook() && o.bookBlurb ? o.bookBlurb : o.blurb)}</small>`, "text out")).join("");
     const kits = kitsFor().filter((kk) => !kk.finished).map((kk) => {
       const c = kitCounts(kk, false);
       return card("kit", kk.id, kk.id === k.id, `
@@ -375,7 +392,11 @@
       contents = `
         <h3 class="label">How many elements?</h3>
         <div class="chips">${C.elementCounts.map((n) => chip("count", n, +S.elemCount === n, `${n} elements`)).join("")}</div>
-        <p class="note">The Genie picks the elements to match your theme. Add any you must have in Must-haves below.</p>
+        <h3 class="label">What should be on the sheet? <small>· tap to turn on or off</small></h3>
+        <div class="chips">${C.elementMix.map((m) => chip("mix", m.id, S.mix.includes(m.id), m.label)).join("")}</div>
+        ${S.mix.includes("people") ? `<label class="field" for="f-people">Describe the people <small>(optional)</small></label>
+        <input type="text" id="f-people" data-field="peopleDesc" value="${esc(S.peopleDesc)}" placeholder="e.g. a grandmother with silver curls and glasses, a young woman with curly hair, a young man with a beard">` : ""}
+        <p class="note">ChatGPT picks the exact pieces to match your theme. Anything specific you want goes in Must-haves below.</p>
         <h3 class="label">Background</h3>
         <div class="chips">${chip("bg", "white", S.bg !== "transparent", "Plain white")}${chip("bg", "transparent", S.bg === "transparent", "Transparent (PNG)")}</div>
         <p class="note">Transparent is easiest for dropping elements straight into Canva.</p>`;
@@ -433,9 +454,13 @@
       <div class="grid kits">${outs}</div>
       ${S.output === "kit" ? `<h3 class="label">Kit size</h3>
       <div class="grid kits">${kits}</div>` : ""}
-      <h3 class="label">Page size</h3>
+      ${S.output === "elements" ? "" : `<h3 class="label">${isBook() ? "Page layout" : "How should the page be arranged?"}</h3>
+      <div class="grid wide">${compsFor().map((c) => card("composition", c.id, c.id === S.composition,
+        `<strong>${esc(c.label)}</strong><small>${esc(c.hint)}</small>`, "text")).join("")}</div>
+      ${isBook() ? '<p class="note">Every layout leaves room for your story words.</p>' : ""}`}
+      ${S.output === "elements" ? "" : `<h3 class="label">Page size</h3>
       <div class="chips">${sizes}</div>
-      ${isBook() ? '<p class="note">Common print-on-demand trim sizes (like Amazon KDP).</p>' : ""}
+      ${isBook() ? '<p class="note">Common print-on-demand trim sizes (like Amazon KDP).</p>' : ""}`}
       ${contents}
       ${story}
       <label class="field" for="f-must">Must-haves <small>(optional)</small></label>
@@ -508,12 +533,12 @@
       <div class="sum-head"><h2>My kit</h2><span class="tag">Saved in this browser</span></div>
       <dl>
         <dt>Theme</dt><dd><strong>${esc(S.theme.trim() || "Not chosen yet")}</strong>${S.occasion.trim() ? `<small>${esc(S.occasion)}</small>` : ""}</dd>
-        <dt>Layout</dt><dd><strong>${esc(fmt().label)} · ${esc(comp().label)}</strong><small>${esc(comp().hint)}</small></dd>
+        <dt>Making</dt><dd><strong>${esc(fmt().label)}</strong>${S.output === "elements" ? "" : `<small>${esc(comp().label)}: ${esc(comp().hint.toLowerCase())}</small>`}</dd>
         <dt>Look</dt><dd><strong>${esc(lookLabel())}</strong>${S.moods.length ? `<small>${esc(S.moods.join(" · "))}</small>` : ""}</dd>
         ${lineArt() ? "" : `<dt>Palette · ${esc(p.label)}</dt><dd>${p.colors.length ? `<span class="swatches big">${p.colors.map((x) => `<span class="sw" style="background:${x}"></span>`).join("")}</span>`
           : `<small>${esc(paletteWords())}</small>`}</dd>`}
-        <dt>Making</dt><dd><strong>${S.maxStep >= 4 ? (k.finished ? "1 full page design" : S.output === "elements" ? `${c.pieces} elements on 1 sheet` : `${c.pieces} pieces · ${c.images} images`) : "Planned in step 4"}</strong>
-          ${S.maxStep >= 4 ? `<small>${esc(byId(C.pageSizes, S.size).label)}</small>` : ""}</dd>
+        <dt>Output</dt><dd><strong>${S.maxStep >= 4 ? (k.finished ? "1 full page design" : S.output === "elements" ? `${c.pieces} elements on 1 sheet` : `${c.pieces} pieces · ${c.images} images`) : "Planned in step 4"}</strong>
+          ${S.maxStep >= 4 && S.output !== "elements" ? `<small>${esc(byId(C.pageSizes, S.size).label)}</small>` : ""}</dd>
       </dl>`;
     $("#openChat").href = S.chatLink.trim() || CHATGPT;
     $("#openChat").textContent = S.chatLink.trim() ? "Open my kit chat ↗" : "Open ChatGPT ↗";
@@ -592,6 +617,10 @@
       case "output": S.output = id; break;
       case "count": S.elemCount = +id; break;
       case "bg": S.bg = id; break;
+      case "mix":
+        if (S.mix.includes(id)) { if (S.mix.length > 1) S.mix = S.mix.filter((m) => m !== id); }
+        else S.mix = [...S.mix, id];
+        break;
       case "size": S.size = id; break;
       case "incl": S.incl[`${S.kit}.${id}`] = el.checked; break;
       case "done": S.done[id] = el.checked; break;

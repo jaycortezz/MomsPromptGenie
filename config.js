@@ -30,37 +30,37 @@ window.GENIE_CONFIG = {
      framing:  the framing pieces this adds to the kit's sheets
   */
   compositions: [
-    { id: "genie", label: "Genie's choice", hint: "Shaped frame, topper and corners",
+    { id: "genie", label: "Let the Genie decide", hint: "A frame with decorations on top and in the corners",
       describe: "a shaped decorative frame with an arch topper and matching corner pieces around a clear centre",
       framing: [["arch topper", 1], ["corner piece", 1]] },
-    { id: "corners", label: "Frame & corners", hint: "Classic frame with corner flourishes",
+    { id: "corners", label: "Fancy corners", hint: "A frame with decorated corners",
       describe: "a classic frame with ornate corner flourishes and an open centre",
       framing: [["corner piece", 2]] },
-    { id: "topper", label: "Arch topper", hint: "Decoration across the top",
+    { id: "topper", label: "Decorated top", hint: "Decorations across the top of the page",
       describe: "a decorative arch of elements across the top with a lighter accent along the bottom",
       framing: [["arch topper", 1], ["bottom border", 1]] },
-    { id: "wreath", label: "Wreath", hint: "A circle of elements",
+    { id: "wreath", label: "Wreath", hint: "A circle of decorations around the middle",
       describe: "a circular wreath of elements surrounding a clear centre",
       framing: [["wreath half", 1], ["small wreath", 1]] },
-    { id: "scene", label: "Full scene", hint: "An illustrated scene edge to edge",
+    { id: "scene", label: "Full picture", hint: "A picture that fills the whole page",
       describe: "a full illustrated scene filling the page, with a calm area for wording",
       framing: [["ground strip", 1], ["sky piece", 1]] },
-    { id: "border", label: "Border", hint: "Decoration all the way around",
+    { id: "border", label: "Border", hint: "Decorations all the way around the edge",
       describe: "a decorative border running around all four edges with an open centre",
       framing: [["border strip", 1], ["corner piece", 1]] },
 
     /* Children's book page layouts (bookOnly). spread: true = two facing pages */
-    { id: "book-genie", bookOnly: true, label: "Genie's choice", hint: "A layout that suits each scene",
+    { id: "book-genie", bookOnly: true, label: "Let the Genie decide", hint: "Picks what suits each page",
       describe: "a page layout that suits the scene, always leaving a calm, uncluttered area for the story text" },
-    { id: "book-full", bookOnly: true, label: "Full-page picture", hint: "Art fills the page, text sits on a calm area",
+    { id: "book-full", bookOnly: true, label: "Picture fills the page", hint: "Words go on a quiet part of the picture",
       describe: "a full-bleed illustration filling the whole page, with a calm, uncluttered area where the story text can sit on top" },
-    { id: "book-spread", bookOnly: true, label: "Double-page spread", hint: "One wide picture across two pages", spread: true,
+    { id: "book-spread", bookOnly: true, label: "Across two pages", hint: "One wide picture over both open pages", spread: true,
       describe: "one wide illustration across two facing pages, with nothing important in the middle where the pages fold, and a calm area for the story text" },
-    { id: "book-below", bookOnly: true, label: "Picture above, text below", hint: "Text area along the bottom",
+    { id: "book-below", bookOnly: true, label: "Words underneath", hint: "Picture on top, words along the bottom",
       describe: "an illustration in the top two-thirds of the page that fades softly into a plain area across the bottom third for the story text" },
-    { id: "book-side", bookOnly: true, label: "Side by side", hint: "Picture on one side, text on the other",
+    { id: "book-side", bookOnly: true, label: "Words beside", hint: "Picture on one side, words on the other",
       describe: "an illustration on one side of the page with a plain, softly textured area on the other side for the story text" },
-    { id: "book-spot", bookOnly: true, label: "Spot illustration", hint: "A small picture on a white page",
+    { id: "book-spot", bookOnly: true, label: "Small picture", hint: "A little picture with white space for words",
       describe: "a spot illustration (vignette) with soft edges floating on a white page, with plenty of white space around it for the story text" }
   ],
 
@@ -157,12 +157,12 @@ window.GENIE_CONFIG = {
        kit:      the bigger kits below (Starter / Bundle / Mega)
   */
   outputs: [
+    { id: "elements", label: "Design elements", emoji: "🧩", tag: "Most popular",
+      blurb: "One sheet of full-color artwork pieces that match your theme, to mix and match.",
+      bookBlurb: "One sheet of characters, props and details from your story." },
     { id: "full", label: "Full page design", emoji: "📄",
       blurb: "One finished, ready-to-use design.",
       bookBlurb: "One finished full-color page illustration." },
-    { id: "elements", label: "Design elements", emoji: "🧩",
-      blurb: "A sheet of separate graphics from your theme to mix and match.",
-      bookBlurb: "A sheet of separate characters, props and details from your story." },
     { id: "kit", label: "Complete kit", emoji: "🎁",
       blurb: "Several matching sheets plus papers, frames and scenes.",
       bookBlurb: "Character sheets, then a whole picture book." }
@@ -170,6 +170,23 @@ window.GENIE_CONFIG = {
 
   /* How many graphics can go on a Design elements sheet */
   elementCounts: [6, 9, 12, 16, 20],
+
+  /* What goes on a Design elements sheet (she taps to turn each on or off).
+     on: true = selected to start with. prompt = how it's described to ChatGPT. */
+  elementMix: [
+    { id: "people", label: "People or characters", on: true,
+      prompt: "people or characters that fit the theme, shown as warm, expressive half-body portraits or figures" },
+    { id: "objects", label: "Food & objects", on: true,
+      prompt: "the theme's signature objects, food, treats and props" },
+    { id: "florals", label: "Florals & leaves", on: true,
+      prompt: "florals, leaves, branches and other nature pieces" },
+    { id: "decor", label: "Bows & corners", on: true,
+      prompt: "decorative pieces such as bows, swags, corner sprays and border accents" },
+    { id: "sparkles", label: "Sparkles", on: true,
+      prompt: "a small set of sparkles, stars or tiny accents" },
+    { id: "animals", label: "Animals", on: false,
+      prompt: "animals or critters that fit the theme" }
+  ],
 
   /* ---------- STEP 4: KITS ----------
      Each kit is a list of items. Every item becomes one or more images.
