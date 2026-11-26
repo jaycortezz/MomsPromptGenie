@@ -8,7 +8,10 @@ ChatGPT prompt needed to make it. No logins, no API keys, no cost: the images ar
 1. **Theme:** what it's about, and what it's for (optional)
 2. **Layout:** format (Invitation, Postcard, Coloring Book, …) and arrangement (frame & corners, arch topper, wreath, …)
 3. **Look:** art style, finish, up to 3 moods, and a color palette
-4. **Plan:** kit size (Finished design, Starter, Bundle, Mega), page size, which sheets to include, and must-haves
+4. **Plan:** what to make, the page size and any must-haves:
+   - **Full page design:** one finished, ready-to-use piece
+   - **Design elements:** one sheet of separate graphics based on the theme (6 to 20 elements, white or transparent background)
+   - **Complete kit:** Starter, Bundle or Mega, with a choice of which sheets to include
 5. **Build:** a numbered list of prompts
    - **Start in ChatGPT** opens a new chat with prompt 1 filled in (and copies it as a backup)
    - Each next prompt is copied and pasted into the **same chat**, so everything matches

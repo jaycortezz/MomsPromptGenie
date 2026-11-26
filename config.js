@@ -150,6 +150,27 @@ window.GENIE_CONFIG = {
     { id: "bk6x9", label: "6 × 9 in", bookOnly: true }
   ],
 
+  /* ---------- STEP 4: WHAT TO MAKE ----------
+     The first choice on the Plan screen.
+       full:     one finished page (uses the "finished" kit below)
+       elements: one sheet of separate graphics based on the theme
+       kit:      the bigger kits below (Starter / Bundle / Mega)
+  */
+  outputs: [
+    { id: "full", label: "Full page design", emoji: "📄",
+      blurb: "One finished, ready-to-use design.",
+      bookBlurb: "One finished full-color page illustration." },
+    { id: "elements", label: "Design elements", emoji: "🧩",
+      blurb: "A sheet of separate graphics from your theme to mix and match.",
+      bookBlurb: "A sheet of separate characters, props and details from your story." },
+    { id: "kit", label: "Complete kit", emoji: "🎁",
+      blurb: "Several matching sheets plus papers, frames and scenes.",
+      bookBlurb: "Character sheets, then a whole picture book." }
+  ],
+
+  /* How many graphics can go on a Design elements sheet */
+  elementCounts: [6, 9, 12, 16, 20],
+
   /* ---------- STEP 4: KITS ----------
      Each kit is a list of items. Every item becomes one or more images.
        kind "sheet":  one image with several pieces. pieces = [name, count].

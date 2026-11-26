@@ -12,6 +12,7 @@
     style: "", finish: "polished", moods: [], palette: "genie", customPalette: "",
     kit: "starter", size: "5x7", incl: {}, mustHaves: "",
     textMode: "blank", wording: "",
+    output: "full", elemCount: 12, bg: "white",
     bookTitle: "", mainChar: "", otherChars: "", story: "",
     chatLink: "", done: {}, picked: {}
   };
@@ -40,7 +41,20 @@
   const style = () => C.styles.find((s) => s.id === S.style);
   const finish = () => byId(C.finishes, S.finish);
   const palette = () => byId(C.palettes, S.palette);
-  const kit = () => byId(kitsFor(), S.kit);
+  // What's being made: a full page, one elements sheet, or a bigger kit
+  function kit() {
+    if (S.output === "full") return kitsFor().find((k) => k.finished);
+    if (S.output === "elements") return elementsKit();
+    return byId(kitsFor().filter((k) => !k.finished), S.kit);
+  }
+  function elementsKit() {
+    const n = +S.elemCount || 12;
+    const main = Math.ceil(n / 3), accents = Math.ceil((n - main) / 2), fillers = n - main - accents;
+    const pieces = [["main motif", main], ["decorative accent", accents]];
+    if (fillers) pieces.push(["small filler element", fillers]);
+    return { id: "elements", label: "Design elements", items: [{ id: "elements", kind: "sheet", title: "Design elements", pieces }] };
+  }
+  const transparentBg = () => S.output === "elements" && S.bg === "transparent";
   const lineArt = () => !!fmt().lineArt;
 
   function plural(name) {
@@ -160,9 +174,10 @@
     }
     return join([
       "Please create an image.",
-      consistencyLine(isFirst),
-      `Image ${n} of ${total}: a clipart sheet called "${item.title}" for a ${themePhrase()} kit.\nDraw these ${count} separate pieces:\n${list}`,
-      "Arrange them in a tidy grid on a plain white background, as a landscape 3:2 image. Each piece must be complete and clearly separated with space around it so it can be cut out: no overlapping, nothing cropped, no labels and no text.",
+      total > 1 ? consistencyLine(isFirst) : "",
+      `${total > 1 ? `Image ${n} of ${total}: a` : "A"} clipart sheet called "${item.title}" for a ${themePhrase()} kit.\nDraw these ${count} separate pieces:\n${list}`,
+      item.id === "elements" ? `Choose the elements yourself so they clearly say "${S.theme.trim()}" at a glance: a varied mix of the most recognisable objects, motifs and details for this theme, with no two the same.` : "",
+      `Arrange them in a tidy grid ${transparentBg() ? "on a transparent background (a PNG with no background at all)" : "on a plain white background"}, as a landscape 3:2 image. Each piece must be complete and clearly separated with space around it so it can be cut out: no overlapping, nothing cropped, no labels and no text.`,
       castBlock(),
       lookBlock(),
       mustLine(),
@@ -234,7 +249,7 @@
   // All the prompts for the Build step, in order
   function buildList() {
     const k = kit();
-    if (k.finished) return [{ key: "finished", title: "Finished design", sub: `${fmt().label} · ${sizeText()}`, prompt: finishedPrompt() }];
+    if (k.finished) return [{ key: "finished", title: "Full page design", sub: `${fmt().label} · ${sizeText()}`, prompt: finishedPrompt() }];
     const jobs = [];
     k.items.filter((it) => included(k, it)).forEach((it) => {
       if (it.kind === "sheet") jobs.push({ item: it });
@@ -278,7 +293,7 @@
 
   function renderMain() {
     const views = [null, viewTheme, viewLayout, viewLook, viewPlan, viewBuild];
-    const nextLabel = ["", "Next: layout →", "Next: look →", "Next: plan my kit →", "Looks good: build my kit →", ""][S.step];
+    const nextLabel = ["", "Next: layout →", "Next: look →", "Next: plan my kit →", "Looks good: make my prompts →", ""][S.step];
     $("#main").innerHTML = views[S.step]() + `
       <p class="error" id="error" role="alert"></p>
       <div class="nav">
@@ -345,16 +360,26 @@
   function viewPlan() {
     const k = kit();
     const sizes = sizesFor().map((p) => chip("size", p.id, p.id === S.size, p.label)).join("");
-    const kits = kitsFor().map((kk) => {
+    const outs = C.outputs.map((o) => card("output", o.id, o.id === S.output,
+      `<span class="em">${o.emoji}</span><strong>${esc(o.label)}</strong><small>${esc(isBook() && o.bookBlurb ? o.bookBlurb : o.blurb)}</small>`, "text out")).join("");
+    const kits = kitsFor().filter((kk) => !kk.finished).map((kk) => {
       const c = kitCounts(kk, false);
-      return card("kit", kk.id, kk.id === S.kit, `
+      return card("kit", kk.id, kk.id === k.id, `
         <span class="kit-head"><strong>${esc(kk.label)}</strong>${kk.tag ? `<span class="tag">${esc(kk.tag)}</span>` : ""}</span>
         <span class="counts">${kk.finished ? "1 image" : `${c.pieces} pieces · ${c.images} images`}</span>
         <small>${esc(kk.blurb)}</small>`, "text kit");
     }).join("");
 
     let contents;
-    if (k.finished) {
+    if (S.output === "elements") {
+      contents = `
+        <h3 class="label">How many elements?</h3>
+        <div class="chips">${C.elementCounts.map((n) => chip("count", n, +S.elemCount === n, `${n} elements`)).join("")}</div>
+        <p class="note">The Genie picks the elements to match your theme. Add any you must have in Must-haves below.</p>
+        <h3 class="label">Background</h3>
+        <div class="chips">${chip("bg", "white", S.bg !== "transparent", "Plain white")}${chip("bg", "transparent", S.bg === "transparent", "Transparent (PNG)")}</div>
+        <p class="note">Transparent is easiest for dropping elements straight into Canva.</p>`;
+    } else if (k.finished) {
       const tm = (v, label, hint) => `<label class="radio"><input type="radio" name="textMode" data-field="textMode" value="${v}" ${S.textMode === v ? "checked" : ""}>
         <span>${label}<small>${hint}</small></span></label>`;
       contents = `
@@ -399,12 +424,15 @@
       <p class="note">Describe what happens in the picture on each page. You'll add the actual story text later in Canva or your book software.</p>` : ""}`;
 
     return `
-      <h1>Plan my ${isBook() ? "book" : "kit"}</h1>
-      <p class="lead">${k.finished ? "You'll get one prompt for a complete design."
+      <h1>${S.output === "full" ? "Plan my design" : S.output === "elements" ? "Plan my elements" : `Plan my ${isBook() ? "book" : "kit"}`}</h1>
+      <p class="lead">${k.finished ? "You'll get one prompt for a complete, ready-to-use design."
+        : S.output === "elements" ? "You'll get one sheet of separate graphics based on your theme. Afterwards you can turn any of them into its own full-size image."
         : isBook() ? "Make the character sheets first so your characters look the same on every page. Then each page of your story gets its own prompt."
         : "Your kit is made as sheets of pieces first, so you can see everything in ChatGPT. Afterwards you choose which pieces to make as separate full-size images."}</p>
-      <h3 class="label">Kit size</h3>
-      <div class="grid kits">${kits}</div>
+      <h3 class="label">What would you like?</h3>
+      <div class="grid kits">${outs}</div>
+      ${S.output === "kit" ? `<h3 class="label">Kit size</h3>
+      <div class="grid kits">${kits}</div>` : ""}
       <h3 class="label">Page size</h3>
       <div class="chips">${sizes}</div>
       ${isBook() ? '<p class="note">Common print-on-demand trim sizes (like Amazon KDP).</p>' : ""}
@@ -484,7 +512,7 @@
         <dt>Look</dt><dd><strong>${esc(lookLabel())}</strong>${S.moods.length ? `<small>${esc(S.moods.join(" · "))}</small>` : ""}</dd>
         ${lineArt() ? "" : `<dt>Palette · ${esc(p.label)}</dt><dd>${p.colors.length ? `<span class="swatches big">${p.colors.map((x) => `<span class="sw" style="background:${x}"></span>`).join("")}</span>`
           : `<small>${esc(paletteWords())}</small>`}</dd>`}
-        <dt>Pieces</dt><dd><strong>${S.maxStep >= 4 ? (k.finished ? "1 finished design" : `${c.pieces} pieces · ${c.images} images`) : "Planned in step 4"}</strong>
+        <dt>Making</dt><dd><strong>${S.maxStep >= 4 ? (k.finished ? "1 full page design" : S.output === "elements" ? `${c.pieces} elements on 1 sheet` : `${c.pieces} pieces · ${c.images} images`) : "Planned in step 4"}</strong>
           ${S.maxStep >= 4 ? `<small>${esc(byId(C.pageSizes, S.size).label)}</small>` : ""}</dd>
       </dl>`;
     $("#openChat").href = S.chatLink.trim() || CHATGPT;
@@ -550,7 +578,7 @@
         S.format = id;
         S.size = fmt().size;
         if (!compsFor().some((c) => c.id === S.composition)) S.composition = compsFor()[0].id;
-        if (!kitsFor().some((k) => k.id === S.kit)) S.kit = kitsFor()[1].id;
+        if (!kitsFor().some((k) => k.id === S.kit && !k.finished)) S.kit = kitsFor()[1].id;
         break;
       case "composition": S.composition = id; break;
       case "style": S.style = id; break;
@@ -561,6 +589,9 @@
         break;
       case "palette": S.palette = id; break;
       case "kit": S.kit = id; break;
+      case "output": S.output = id; break;
+      case "count": S.elemCount = +id; break;
+      case "bg": S.bg = id; break;
       case "size": S.size = id; break;
       case "incl": S.incl[`${S.kit}.${id}`] = el.checked; break;
       case "done": S.done[id] = el.checked; break;
