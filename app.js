@@ -195,7 +195,7 @@
     return join([
       "Please create an image.",
       `A clipart sheet of ${count} separate, ${color} design elements for a ${themePhrase()} theme.`,
-      `Include a varied mix of:\n${mix.map((m) => `- ${m.prompt}`).join("\n")}`,
+      `Include a varied mix of:\n${mix.map((m) => `- ${m.prompt.replace(/\{theme\}/g, S.theme.trim())}`).join("\n")}`,
       `Choose the specific elements yourself so they clearly say "${S.theme.trim()}" at a glance, with no two the same. Make some pieces larger and some smaller, like a professional clipart set.`,
       people,
       castBlock(),
@@ -393,7 +393,16 @@
         <h3 class="label">How many elements?</h3>
         <div class="chips">${C.elementCounts.map((n) => chip("count", n, +S.elemCount === n, `${n} elements`)).join("")}</div>
         <h3 class="label">What should be on the sheet? <small>· tap to turn on or off</small></h3>
-        <div class="chips">${C.elementMix.map((m) => chip("mix", m.id, S.mix.includes(m.id), m.label)).join("")}</div>
+        ${C.elementGroups.map((g) => {
+          const items = C.elementMix.filter((m) => (m.group || "art") === g.id);
+          const allOn = items.every((m) => S.mix.includes(m.id));
+          return `<div class="mixgroup">
+            <div class="mixhead"><strong>${esc(g.label)}</strong>${g.id === "art" ? "" :
+              `<button type="button" class="link small" data-act="mixgroup" data-id="${esc(g.id)}">${allOn ? "Remove all" : "Add all"}</button>`}</div>
+            ${g.hint ? `<p class="note">${esc(g.hint)}</p>` : ""}
+            <div class="chips">${items.map((m) => chip("mix", m.id, S.mix.includes(m.id), m.label)).join("")}</div>
+          </div>`;
+        }).join("")}
         ${S.mix.includes("people") ? `<label class="field" for="f-people">Describe the people <small>(optional)</small></label>
         <input type="text" id="f-people" data-field="peopleDesc" value="${esc(S.peopleDesc)}" placeholder="e.g. a grandmother with silver curls and glasses, a young woman with curly hair, a young man with a beard">` : ""}
         <p class="note">ChatGPT picks the exact pieces to match your theme. Anything specific you want goes in Must-haves below.</p>
@@ -618,6 +627,13 @@
       case "output": S.output = id; break;
       case "count": S.elemCount = +id; break;
       case "bg": S.bg = id; break;
+      case "mixgroup": {
+        const ids = C.elementMix.filter((m) => (m.group || "art") === id).map((m) => m.id);
+        const allOn = ids.every((m) => S.mix.includes(m));
+        const next = allOn ? S.mix.filter((m) => !ids.includes(m)) : [...new Set([...S.mix, ...ids])];
+        if (next.length) S.mix = next;
+        break;
+      }
       case "mix":
         if (S.mix.includes(id)) { if (S.mix.length > 1) S.mix = S.mix.filter((m) => m !== id); }
         else S.mix = [...S.mix, id];

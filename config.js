@@ -172,7 +172,12 @@ window.GENIE_CONFIG = {
   elementCounts: [6, 9, 12, 16, 20],
 
   /* What goes on a Design elements sheet (she taps to turn each on or off).
-     on: true = selected to start with. prompt = how it's described to ChatGPT. */
+     on: true = selected to start with. prompt = how it's described to ChatGPT.
+     group: which heading it sits under (see elementGroups). {theme} is replaced with her theme. */
+  elementGroups: [
+    { id: "art", label: "Artwork" },
+    { id: "scene", label: "Scene builders", hint: "Pieces to build your own scene: a background, something to stand on, and a frame." }
+  ],
   elementMix: [
     { id: "people", label: "People or characters", on: true,
       prompt: "people or characters that fit the theme, shown as warm, expressive half-body portraits or figures" },
@@ -186,12 +191,12 @@ window.GENIE_CONFIG = {
       prompt: "a small set of sparkles, stars or tiny accents" },
     { id: "animals", label: "Animals", on: false,
       prompt: "animals or critters that fit the theme" },
-    { id: "backgrounds", label: "Backgrounds", on: false,
-      prompt: "background scenes (complete backdrops such as a sky, skyline, room or landscape, each drawn as its own rectangle, with no characters in them)" },
-    { id: "scenepieces", label: "Scene pieces", on: false,
-      prompt: "scene pieces: cut-out stages or platforms for characters to stand on, such as a patio, porch, garden path or stage, each with no background behind it" },
-    { id: "frames", label: "Frames", on: false,
-      prompt: "decorative frames built from the theme's motifs, each with a completely empty centre for wording or a photo" }
+    { id: "backgrounds", label: "Backgrounds", on: false, group: "scene",
+      prompt: "background scenes set in the world of \"{theme}\": complete backdrops with no characters in them, each drawn as its own rectangle" },
+    { id: "scenepieces", label: "Scene pieces", on: false, group: "scene",
+      prompt: "scene pieces from the world of \"{theme}\": cut-out stages, platforms or ground for characters to stand on, each with no background behind it" },
+    { id: "frames", label: "Frames", on: false, group: "scene",
+      prompt: "decorative frames made from \"{theme}\" motifs, each with a completely empty centre for wording or a photo" }
   ],
 
   /* ---------- STEP 4: KITS ----------
